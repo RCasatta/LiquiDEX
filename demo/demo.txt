@@ -1,0 +1,34 @@
+PRIVATEKEY=cTr1NJdowsZQz1Rct5cxYo4ocgb1no7B7RX8SaKLPuvpN2hmpdDh # WIF
+SCRIPTPUBKEY=76a914efbddc271c65897df7f31de46dc4b4fdf886b73488ac
+ADDRESS=2dwHPL4vUj8eZTjW9tctDbFgMA7qahEsDGP
+
+AMOUNT_X=1
+ASSET_A=$(ec issueasset 10 0 | jq -r .asset)
+AMOUNT_Y=2
+ASSET_B=$(ec issueasset 10 0 | jq -r .asset)
+ec generatetoaddress 2 $(ec getnewaddress)
+
+TXID=$(ec sendtoaddress $ADDRESS $AMOUNT_X "" "" false true 1 "UNSET" $ASSET_A)
+VOUT=$(ec gettransaction $TXID | jq .details | jq .[0].vout)
+ec generatetoaddress 2 $(ec getnewaddress)
+
+TXU=$(ec createrawtransaction "[{\"txid\":\"$TXID\",\"vout\":$VOUT,\"sequence\":0}]" "[{\"$ADDRESS\":$AMOUNT_Y}]" 0 false "{\"$ADDRESS\": \"$ASSET_B\"}")
+
+TXS=$(ec signrawtransactionwithkey $TXU "[\"$PRIVATEKEY\"]" "[{\"txid\":\"$TXID\",\"vout\":$VOUT,\"scriptPubKey\":\"$SCRIPTPUBKEY\"}]" "SINGLE|ANYONECANPAY" | jq -r .hex)
+
+AMOUNT_B=10
+ADDRESS_TAKER=$(ec getaddressinfo $(ec getnewaddress "" "legacy") | jq -r .unconfidential)
+TXID_B=$(ec sendtoaddress $ADDRESS_TAKER $AMOUNT_B "" "" false true 1 "UNSET" $ASSET_B)
+VOUT_B=$(ec gettransaction $TXID_B | jq .details | jq .[0].vout)
+TXID_FEE=$(ec sendtoaddress $ADDRESS_TAKER $(ec getbalance | jq .bitcoin) "" "" true)
+VOUT_FEE=$(ec gettransaction $TXID_FEE | jq .details | jq .[0].vout)
+ec generatetoaddress 2 $(ec getnewaddress)
+AMOUNT_FEE=$(ec getbalance | jq .bitcoin)
+FEE=$(ec dumpassetlabels | jq -r .bitcoin)
+
+# from a virtualenv with wally installed
+TX_TAKER_U=$(python3 combineandfund.py $TXS $ADDRESS_TAKER $AMOUNT_X $ASSET_A $AMOUNT_Y $ASSET_B $FEE $TXID_B $VOUT_B $AMOUNT_B $TXID_FEE $VOUT_FEE $AMOUNT_FEE)
+
+PRIVATEKEY_TAKER=$(ec dumpprivkey $ADDRESS_TAKER)
+TX_TAKER_S=$(ec signrawtransactionwithkey $TX_TAKER_U "[\"$PRIVATEKEY_TAKER\"]" | jq -r .hex)
+ec testmempoolaccept "[\"$TX_TAKER_S\"]"
