@@ -93,9 +93,9 @@ spending the input proposed as a trade and invalidating the proposal.
   inputs and outputs are unblinded. Taker may blind its inputs and outputs.
   This does not require the maker to include extra data other that the 
   incomplete transaction.
-- Rather than requiring all maker inputs and outputs to be blinded, only require
-  that its inputs are unblinded. This requires that the maker includes some
-  extra information, so that the taker can blind the whole transaction.
+- Rather than requiring all maker inputs and outputs to be unblinded, only
+  require that its inputs are unblinded. This requires that the maker includes
+  some extra information, so that the taker can blind the whole transaction.
 - All maker inputs and outputs can be blinded. This requires that the maker 
   include extra information, so that the taker can unblind the maker's inputs
   and outputs.
