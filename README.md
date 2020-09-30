@@ -11,7 +11,7 @@ A decentralized exchange for Liquid transactions.
 
 ## Flow
 
-NOTE: for now assume all assets are unblinded.
+NOTE: for now assume all maker's inputs and outputs are unblinded.
 
 Maker wants to propose to exchange amount `x` of asset `A` for amount `y` of
 asset `B`.
@@ -89,10 +89,6 @@ spending the input proposed as a trade and invalidating the proposal.
 ## Possible improvements:
 
 - Handle L-BTC as a trading asset.
-- Rather than requiring all inputs to be unblinded, only require that the maker 
-  inputs and outputs are unblinded. Taker may blind its inputs and outputs.
-  This does not require the maker to include extra data other that the 
-  incomplete transaction.
 - Rather than requiring all maker inputs and outputs to be unblinded, only
   require that its inputs are unblinded. This requires that the maker includes
   some extra information, so that the taker can blind the whole transaction.
