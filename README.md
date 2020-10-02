@@ -11,8 +11,6 @@ A decentralized exchange for Liquid transactions.
 
 ## Flow
 
-NOTE: for now assume all maker's inputs and outputs are unblinded.
-
 Maker wants to propose to exchange amount `x` of asset `A` for amount `y` of
 asset `B`.
 
@@ -55,6 +53,8 @@ Taker broadcasts the `TX_xAyB`, and the trade is executed.
 
 ## Test on Liquid Mainnet
 
+TODO: replace example with a blinded one (which has interface changes).
+
 In the following example performed on Liquid Mainnet, the Maker propose a trade
 offering 4.99 USDT in exchange of 0.05 Atomic Swap pints. 
 
@@ -89,14 +89,9 @@ spending the input proposed as a trade and invalidating the proposal.
 ## Possible improvements:
 
 - Handle L-BTC as a trading asset.
-- Rather than requiring all maker inputs and outputs to be unblinded, only
-  require that its inputs are unblinded. This requires that the maker includes
-  some extra information, so that the taker can blind the whole transaction.
-- All maker inputs and outputs can be blinded. This requires that the maker 
-  include extra information, so that the taker can unblind the maker's inputs
-  and outputs.
 - Taker could potentially take multiple maker proposed transactions and complete
-  those in a single tx
+  those in a single tx.
+- Use PSET once there is a new Elements release supporting its finalized redesign.
 
 ## Copyright
 
