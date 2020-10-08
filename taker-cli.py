@@ -102,10 +102,9 @@ def rawblindrawtransaction(tx_hex,
             asset, output_abf, output_generator, os.urandom(32),
             input_assets_concat, input_abfs_concat, input_ags_concat)
 
-        if not given:
-            wally.tx_set_output_asset(tx, out_idx, output_generator)
-            wally.tx_set_output_value(tx, out_idx, output_value_commitment)
-            wally.tx_set_output_nonce(tx, out_idx, eph_key_pub)
+        wally.tx_set_output_asset(tx, out_idx, output_generator)
+        wally.tx_set_output_value(tx, out_idx, output_value_commitment)
+        wally.tx_set_output_nonce(tx, out_idx, eph_key_pub)
         wally.tx_set_output_surjectionproof(tx, out_idx, surjectionproof)
         wally.tx_set_output_rangeproof(tx, out_idx, rangeproof)
 
