@@ -42,7 +42,7 @@ def rawblindrawtransaction(tx_hex,
     # TODO: assert all output amounts are in the supported range
     ct_bits = 52
 
-    # TODO: add support for non-fee unblinded outputs, for those:
+    # TODO: add general support for non-fee unblinded outputs, for those:
     #       - do not generate blinders
     #       - do not set *proof and nonce
     out_num = wally.tx_get_num_outputs(tx)
@@ -51,11 +51,14 @@ def rawblindrawtransaction(tx_hex,
     output_vbfs = []
     assert len(output_amount_blinders) == len(output_amounts) == len(output_asset_blinders) == len(output_assets) == out_num
     for out_idx in range(out_num):
-        if wally.tx_get_output_nonce(tx, out_idx) == b'\x00' * 33:  # unblinded
-            assert out_idx == out_num - 1
-            continue
-
         given = bool(output_amount_blinders[out_idx])
+        if wally.tx_get_output_nonce(tx, out_idx) == b'\x00' * 33:  # unblinded
+            if out_idx == out_num - 1:  # fee
+                continue
+
+            # If given, 0-th output might be unblinded
+            assert out_idx == 0 and given
+
         output_abfs.append(h2b_rev(output_asset_blinders[out_idx]) if given else os.urandom(32))
         output_vbfs.append(h2b_rev(output_amount_blinders[out_idx]) if given else os.urandom(32))
         output_blinded_values.append(btc2sat(output_amounts[out_idx]) if given else wally.tx_confidential_value_to_satoshi(wally.tx_get_output_value(tx, out_idx)))
@@ -83,12 +86,17 @@ def rawblindrawtransaction(tx_hex,
             value_satoshi = wally.tx_confidential_value_to_satoshi(value_bytes)
             asset = asset_prefixed[1:]
 
+        output_abf = output_abfs[out_idx]
+        output_vbf = output_vbfs[out_idx]
+        blinded = output_abf != b'\x00' * 32 and output_vbf != b'\x00' * 32
+
+        if not blinded:
+            continue
+
         eph_key_prv = os.urandom(32)
         eph_key_pub = wally.ec_public_key_from_private_key(eph_key_prv)
         blinding_nonce = wally.sha256(wally.ecdh(blinding_pubkey, eph_key_prv))
 
-        output_abf = output_abfs[out_idx]
-        output_vbf = output_vbfs[out_idx]
         output_generator = wally.asset_generator_from_bytes(asset, output_abf)
         output_value_commitment = wally.asset_value_commitment(
             value_satoshi, output_vbf, output_generator)
@@ -179,7 +187,7 @@ def main():
     if asset_commitment[0] == 1:
         assert amount_commitment[0] == 1
         assert asset_commitment[1:] == h2b_rev(B)
-        assert amount_commitment[1:] == wally.tx_confidential_value_from_satoshi(y)
+        assert amount_commitment == wally.tx_confidential_value_from_satoshi(y)
     else:
         asset_commitment_ = wally.asset_generator_from_bytes(h2b_rev(B), h2b_rev(maker_output["asset_blinder"]))
         amount_commitment_ = wally.asset_value_commitment(y, h2b_rev(maker_output["amount_blinder"]), asset_commitment_)
