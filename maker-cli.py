@@ -1,12 +1,5 @@
 import argparse
-import time, requests, json, os
-
-import wallycore as wally
-
-h2b = wally.hex_to_bytes
-b2h = wally.hex_from_bytes
-h2b_rev = lambda h : wally.hex_to_bytes(h)[::-1]
-b2h_rev = lambda b : wally.hex_from_bytes(b[::-1])
+import time, requests, json
 
 def btc2sat(btc):
     return round(btc * 10**8)
@@ -57,6 +50,7 @@ def main():
 
     amount_receive = round(rate * utxo["amount"], 8)
     address = connection.call("getnewaddress")
+    address = connection.call("getaddressinfo", address)["unconfidential"]
 
     tx = connection.call(
         "createrawtransaction",
@@ -65,16 +59,6 @@ def main():
         0,
         False,
         {address: asset_receive})
-
-    asset_blinder_bytes = os.urandom(32)
-    amount_blinder_bytes = os.urandom(32)
-    asset_commitment = wally.asset_generator_from_bytes(h2b_rev(asset_receive), asset_blinder_bytes)
-    amount_commitment = wally.asset_value_commitment(btc2sat(amount_receive), amount_blinder_bytes, asset_commitment)
-
-    tx_ = wally.tx_from_hex(tx, wally.WALLY_TX_FLAG_USE_WITNESS | wally.WALLY_TX_FLAG_USE_ELEMENTS)
-    wally.tx_set_output_asset(tx_, 0, asset_commitment)
-    wally.tx_set_output_value(tx_, 0, amount_commitment)
-    tx = wally.tx_to_hex(tx_, wally.WALLY_TX_FLAG_USE_WITNESS | wally.WALLY_TX_FLAG_USE_ELEMENTS)
 
     ret = connection.call(
         "signrawtransactionwithwallet",
@@ -94,8 +78,8 @@ def main():
         "outputs": [{
             "asset": asset_receive,
             "amount": btc2sat(amount_receive),
-            "asset_blinder": b2h_rev(asset_blinder_bytes),
-            "amount_blinder": b2h_rev(amount_blinder_bytes),
+            "asset_blinder": "00" * 32,
+            "amount_blinder": "00" * 32,
         }],
     }, separators=(',', ':')))
 
