@@ -187,6 +187,7 @@ def main():
         assert amount_commitment == amount_commitment_
 
     unspents = connection.call("listunspent")
+    unspents = [u for u in unspents if u["spendable"]]
     utxos_B = [u for u in unspents if u["asset"] == B]
     assert sum(btc2sat(u["amount"]) for u in utxos_B) >= y
     fixed_fee = 5000
